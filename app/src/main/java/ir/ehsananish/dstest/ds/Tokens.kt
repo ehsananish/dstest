@@ -172,7 +172,7 @@ enum class FontScale(val factor: Float, val nameFa: String) {
     Small(0.9f, "کوچک"),
     Normal(1f, "معمولی"),
     Large(1.15f, "بزرگ"),
-    Huge(1.3f, "خیلی بزرگ"),
+    Huge(1.3f, "درشت"),
 }
 
 fun appTypography(scale: Float): Typography {

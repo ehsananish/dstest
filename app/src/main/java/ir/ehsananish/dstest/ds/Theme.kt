@@ -2,6 +2,7 @@ package ir.ehsananish.dstest.ds
 
 import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -54,11 +55,10 @@ fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
         LocalSettings provides settings,
         LocalIsDark provides dark,
     ) {
-        MaterialTheme(
-            colorScheme = if (dark) darkScheme(settings.palette) else lightScheme(settings.palette),
-            typography = appTypography(settings.fontScale.factor),
-            shapes = AppShapes,
-            content = content,
-        )
+        val scheme = if (dark) darkScheme(settings.palette) else lightScheme(settings.palette)
+        MaterialTheme(colorScheme = scheme, typography = appTypography(settings.fontScale.factor), shapes = AppShapes) {
+            // Text outside a Surface would otherwise default to black, unreadable in dark mode.
+            CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
+        }
     }
 }
