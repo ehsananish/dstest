@@ -31,6 +31,7 @@ import ir.ehsananish.dstest.ds.AppSettings
 import ir.ehsananish.dstest.ds.AppShell
 import ir.ehsananish.dstest.ds.AppTheme
 import ir.ehsananish.dstest.ds.BtnStyle
+import ir.ehsananish.dstest.ds.DesignStyle
 import ir.ehsananish.dstest.ds.EmptyState
 import ir.ehsananish.dstest.ds.NavItem
 import ir.ehsananish.dstest.ds.OnboardingPage
@@ -59,9 +60,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val settings = AppSettings(this)
-        // Used by the screenshot step on CI: --ez skip_onboarding true --ei open_tab N (-1 = settings)
+        // Default look for this app: DesignStyle.Pastel or DesignStyle.Breeze. Users can switch in Settings.
+        val settings = AppSettings(this, defaultStyle = DesignStyle.Pastel)
+        // Used by the screenshot step on CI: --ez skip_onboarding true --ei open_tab N (-1 = settings),
+        // --ez alt_style true switches to the other design style.
         if (intent.getBooleanExtra("skip_onboarding", false)) settings.updateOnboardingDone(true)
+        if (intent.getBooleanExtra("alt_style", false)) {
+            settings.updateStyle(if (settings.style == DesignStyle.Pastel) DesignStyle.Breeze else DesignStyle.Pastel)
+        }
         val initialTab = intent.getIntExtra("open_tab", 0)
         setContent {
             AppTheme(settings) {

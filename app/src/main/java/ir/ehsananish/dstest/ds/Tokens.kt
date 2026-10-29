@@ -45,6 +45,17 @@ object Stroke {
     val bold = 2.dp
 }
 
+/** Two visual styles. Pastel: soft, round, playful. Breeze (نسیم): flat, clean, messenger-like. */
+enum class DesignStyle(val nameFa: String) { Pastel("پاستیل"), Breeze("نسیم") }
+
+val BreezeShapes = Shapes(
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(14.dp),
+    extraLarge = RoundedCornerShape(18.dp),
+)
+
 val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(Radius.xs),
     small = RoundedCornerShape(Radius.sm),
@@ -118,7 +129,34 @@ object Palettes {
     )
 
     val all = listOf(Lilac, Peach, Mint, Sky, Lemon, Rose)
-    fun byId(id: String?): Palette = all.firstOrNull { it.id == id } ?: all.first()
+
+    // Breeze palettes: one strong accent on neutral gray/white surfaces.
+    private val bg = Color(0xFFF1F2F6)
+    private val sv = Color(0xFFE9EBEF)
+    private val ol = Color(0xFFD9DCE1)
+    private val ink = Color(0xFF111418)
+    private val ink2 = Color(0xFF6F757C)
+    private val blue = Triple(Color(0xFF2A82DA), Color(0xFFDCEBFC), Color(0xFF0B3A6B))
+    private val green = Triple(Color(0xFF2E9A50), Color(0xFFDAF2DF), Color(0xFF0B3A1A))
+    private val violet = Triple(Color(0xFF7C5BE0), Color(0xFFECE4FD), Color(0xFF2D1566))
+    private val orange = Triple(Color(0xFFD2660F), Color(0xFFFDE7D2), Color(0xFF4A2200))
+    private val rose = Triple(Color(0xFFCC3F6E), Color(0xFFFCE0EA), Color(0xFF4F0D27))
+    private val teal = Triple(Color(0xFF128C9C), Color(0xFFD5F1F5), Color(0xFF053B43))
+    private fun breeze(id: String, name: String, a: Triple<Color, Color, Color>, b: Triple<Color, Color, Color>, c: Triple<Color, Color, Color>) =
+        Palette(id, name, a.first, a.second, a.third, b.first, b.second, b.third, c.first, c.second, c.third, bg, sv, ol, ink, ink2)
+
+    val breezeAll = listOf(
+        breeze("b_blue", "آبی", blue, green, orange),
+        breeze("b_green", "سبز", green, blue, violet),
+        breeze("b_violet", "بنفش", violet, rose, blue),
+        breeze("b_orange", "نارنجی", orange, blue, green),
+        breeze("b_rose", "سرخابی", rose, violet, teal),
+        breeze("b_teal", "فیروزه‌ای", teal, orange, violet),
+    )
+
+    fun forStyle(style: DesignStyle): List<Palette> = if (style == DesignStyle.Breeze) breezeAll else all
+    fun byId(id: String?, style: DesignStyle = DesignStyle.Pastel): Palette =
+        forStyle(style).let { list -> list.firstOrNull { it.id == id } ?: list.first() }
 }
 
 fun lightScheme(p: Palette): ColorScheme = lightColorScheme(
@@ -161,6 +199,37 @@ fun darkScheme(p: Palette): ColorScheme {
     )
 }
 
+fun breezeLight(p: Palette): ColorScheme = lightScheme(p).copy(
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color.White,
+    surfaceContainer = Color(0xFFF6F7F9),
+    surfaceContainerHigh = Color(0xFFEDEFF2),
+    surfaceContainerHighest = Color(0xFFE4E7EB),
+    outlineVariant = Color(0xFFE6E8EC),
+)
+
+fun breezeDark(p: Palette): ColorScheme {
+    val night = Color(0xFF17212B)
+    fun tint(c: Color, f: Float) = lerp(night, c, f)
+    fun lift(c: Color) = lerp(c, Color.White, 0.12f)
+    fun soft(c: Color) = lerp(c, Color.White, 0.3f)
+    return darkColorScheme(
+        primary = lift(p.primary), onPrimary = Color.White,
+        primaryContainer = tint(p.primary, 0.35f), onPrimaryContainer = soft(p.primaryContainer),
+        secondary = lift(p.secondary), onSecondary = Color.White,
+        secondaryContainer = tint(p.secondary, 0.32f), onSecondaryContainer = soft(p.secondaryContainer),
+        tertiary = lift(p.tertiary), onTertiary = Color.White,
+        tertiaryContainer = tint(p.tertiary, 0.32f), onTertiaryContainer = soft(p.tertiaryContainer),
+        background = Color(0xFF0E1621), onBackground = Color(0xFFF2F4F7),
+        surface = Color(0xFF0E1621), onSurface = Color(0xFFF2F4F7),
+        surfaceVariant = Color(0xFF242F3D), onSurfaceVariant = Color(0xFF8396AA),
+        surfaceContainerLowest = night, surfaceContainerLow = night,
+        surfaceContainer = Color(0xFF1D2733), surfaceContainerHigh = Color(0xFF242F3D),
+        surfaceContainerHighest = Color(0xFF2C3948),
+        outline = Color(0xFF34404E), outlineVariant = Color(0xFF26313E),
+    )
+}
+
 val Vazirmatn = FontFamily(
     Font(R.font.vazirmatn_regular, FontWeight.Normal),
     Font(R.font.vazirmatn_medium, FontWeight.Medium),
@@ -175,13 +244,20 @@ enum class FontScale(val factor: Float, val nameFa: String) {
     Huge(1.3f, "درشت"),
 }
 
-fun appTypography(scale: Float): Typography {
-    fun style(size: Int, line: Int, weight: FontWeight) = TextStyle(
-        fontFamily = Vazirmatn,
-        fontWeight = weight,
-        fontSize = (size * scale).sp,
-        lineHeight = (line * scale).sp,
-    )
+fun appTypography(scale: Float, design: DesignStyle = DesignStyle.Pastel): Typography {
+    val breeze = design == DesignStyle.Breeze
+    fun style(size: Int, line: Int, weight: FontWeight): TextStyle {
+        // Breeze headings are calmer: smaller and Bold instead of Black.
+        val big = size >= 22
+        val s = if (breeze && big) 0.86f else 1f
+        val w = if (breeze && weight == FontWeight.Black) FontWeight.Bold else weight
+        return TextStyle(
+            fontFamily = Vazirmatn,
+            fontWeight = w,
+            fontSize = (size * scale * s).sp,
+            lineHeight = (line * scale * s).sp,
+        )
+    }
     return Typography(
         displayLarge = style(48, 64, FontWeight.Black),
         displayMedium = style(40, 54, FontWeight.Black),

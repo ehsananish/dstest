@@ -16,10 +16,12 @@ import androidx.compose.ui.unit.LayoutDirection
 enum class ThemeMode(val nameFa: String) { System("خودکار"), Light("روشن"), Dark("تیره") }
 
 /** User preferences shared by all screens; changes recompose the whole app instantly. */
-class AppSettings(context: Context) {
+class AppSettings(context: Context, defaultStyle: DesignStyle = DesignStyle.Pastel) {
     private val prefs = context.getSharedPreferences("ds_settings", Context.MODE_PRIVATE)
 
-    var palette by mutableStateOf(Palettes.byId(prefs.getString("palette", null)))
+    var style by mutableStateOf(enumOr(prefs.getString("style", null), defaultStyle))
+        private set
+    var palette by mutableStateOf(Palettes.byId(prefs.getString("palette", null), style))
         private set
     var themeMode by mutableStateOf(enumOr(prefs.getString("theme_mode", null), ThemeMode.System))
         private set
@@ -28,6 +30,11 @@ class AppSettings(context: Context) {
     var onboardingDone by mutableStateOf(prefs.getBoolean("onboarding_done", false))
         private set
 
+    fun updateStyle(s: DesignStyle) {
+        style = s
+        if (palette !in Palettes.forStyle(s)) palette = Palettes.forStyle(s).first()
+        prefs.edit().putString("style", s.name).putString("palette", palette.id).apply()
+    }
     fun updatePalette(p: Palette) { palette = p; prefs.edit().putString("palette", p.id).apply() }
     fun updateThemeMode(m: ThemeMode) { themeMode = m; prefs.edit().putString("theme_mode", m.name).apply() }
     fun updateFontScale(s: FontScale) { fontScale = s; prefs.edit().putString("font_scale", s.name).apply() }
@@ -42,6 +49,7 @@ class AppSettings(context: Context) {
 
 val LocalSettings = staticCompositionLocalOf<AppSettings> { error("AppSettings not provided") }
 val LocalIsDark = staticCompositionLocalOf { false }
+val LocalStyle = staticCompositionLocalOf { DesignStyle.Pastel }
 
 @Composable
 fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
@@ -54,9 +62,21 @@ fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
         LocalLayoutDirection provides LayoutDirection.Rtl,
         LocalSettings provides settings,
         LocalIsDark provides dark,
+        LocalStyle provides settings.style,
     ) {
-        val scheme = if (dark) darkScheme(settings.palette) else lightScheme(settings.palette)
-        MaterialTheme(colorScheme = scheme, typography = appTypography(settings.fontScale.factor), shapes = AppShapes) {
+        val p = settings.palette
+        val breeze = settings.style == DesignStyle.Breeze
+        val scheme = when {
+            breeze && dark -> breezeDark(p)
+            breeze -> breezeLight(p)
+            dark -> darkScheme(p)
+            else -> lightScheme(p)
+        }
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = appTypography(settings.fontScale.factor, settings.style),
+            shapes = if (breeze) BreezeShapes else AppShapes,
+        ) {
             // Text outside a Surface would otherwise default to black, unreadable in dark mode.
             CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
         }

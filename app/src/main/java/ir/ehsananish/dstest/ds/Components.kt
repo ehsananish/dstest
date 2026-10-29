@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -36,7 +38,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -47,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -55,6 +60,7 @@ import androidx.compose.ui.unit.dp
 /** Soft pastel color blobs drawn behind headers and onboarding. */
 @Composable
 fun PastelBackdrop(modifier: Modifier = Modifier) {
+    if (isBreeze()) return
     val cs = MaterialTheme.colorScheme
     val alpha = if (LocalIsDark.current) 0.35f else 0.9f
     Canvas(modifier) {
@@ -72,6 +78,26 @@ fun PastelBackdrop(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun isBreeze(): Boolean = LocalStyle.current == DesignStyle.Breeze
+
+/** Color of the top app bar in Breeze style (accent in light mode, raised navy in dark mode). */
+@Composable
+fun headerBarColor(): Color =
+    if (LocalIsDark.current) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary
+
+/** The saturated color behind a pastel container (used for Breeze's solid icon tiles). */
+@Composable
+private fun strongFor(container: Color): Color {
+    val cs = MaterialTheme.colorScheme
+    return when (container) {
+        cs.primaryContainer -> cs.primary
+        cs.secondaryContainer -> cs.secondary
+        cs.tertiaryContainer -> cs.tertiary
+        else -> container
+    }
+}
+
 /** Rounded tonal card; the main building block of every screen. */
 @Composable
 fun PastelCard(
@@ -82,7 +108,7 @@ fun PastelCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(Radius.lg)
+    val shape = RoundedCornerShape(if (isBreeze()) 14.dp else Radius.lg)
     Surface(
         modifier = modifier
             .clip(shape)
@@ -114,10 +140,12 @@ fun PillButton(
         BtnStyle.Tonal -> cs.secondaryContainer to cs.onSecondaryContainer
         BtnStyle.Outlined -> Color.Transparent to cs.primary
     }
+    val breeze = isBreeze()
+    val shape = if (breeze) RoundedCornerShape(10.dp) else CircleShape
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        if (pressed) 0.94f else 1f,
+        if (pressed) (if (breeze) 0.98f else 0.94f) else 1f,
         spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
         label = "press",
     )
@@ -128,11 +156,11 @@ fun PillButton(
                 scaleY = scale
                 alpha = if (enabled) 1f else 0.45f
             }
-            .clip(CircleShape)
+            .clip(shape)
             .background(bg)
-            .then(if (style == BtnStyle.Outlined) Modifier.border(Stroke.bold, cs.outline, CircleShape) else Modifier)
+            .then(if (style == BtnStyle.Outlined) Modifier.border(Stroke.bold, if (breeze) cs.primary else cs.outline, shape) else Modifier)
             .clickable(interactionSource = interaction, indication = LocalIndication.current, enabled = enabled, onClick = onClick)
-            .heightIn(min = 52.dp)
+            .heightIn(min = if (breeze) 48.dp else 52.dp)
             .padding(horizontal = Space.lg, vertical = Space.sm),
         horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
@@ -149,12 +177,13 @@ fun CircleIconButton(
     modifier: Modifier = Modifier,
     container: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     contentDescription: String? = null,
+    tint: Color = contentColorFor(container).takeOrElse { LocalContentColor.current },
 ) {
     Box(
         modifier.size(44.dp).clip(CircleShape).background(container).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription, tint = contentColorFor(container), modifier = Modifier.size(22.dp))
+        Icon(icon, contentDescription, tint = tint, modifier = Modifier.size(22.dp))
     }
 }
 
@@ -167,11 +196,18 @@ fun IconBadge(
     tint: Color = contentColorFor(container),
     size: Dp = 48.dp,
 ) {
-    Box(
-        modifier.size(size).clip(RoundedCornerShape(size * 0.36f)).background(container),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(size * 0.5f))
+    // Breeze: solid saturated tile with a white icon; circles for large badges.
+    val breeze = isBreeze()
+    val strong = strongFor(container)
+    val bg = if (breeze) strong else container
+    val fg = if (breeze && strong != container) Color.White else tint
+    val shape = when {
+        breeze && size >= 72.dp -> CircleShape
+        breeze -> RoundedCornerShape(size * 0.28f)
+        else -> RoundedCornerShape(size * 0.36f)
+    }
+    Box(modifier.size(size).clip(shape).background(bg), contentAlignment = Alignment.Center) {
+        Icon(icon, null, tint = fg, modifier = Modifier.size(size * if (breeze) 0.55f else 0.5f))
     }
 }
 
@@ -184,6 +220,32 @@ fun ScreenHeader(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    if (isBreeze()) {
+        val bar = headerBarColor()
+        val onBar = if (LocalIsDark.current) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
+        CompositionLocalProvider(LocalContentColor provides onBar) {
+            Row(
+                modifier.fillMaxWidth().background(bar).heightIn(min = 60.dp)
+                    .padding(horizontal = Space.xs, vertical = Space.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (onBack != null) {
+                    CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, onBack, container = Color.Transparent, contentDescription = "برگشت", tint = onBar)
+                } else {
+                    Spacer(Modifier.width(Space.sm))
+                }
+                Column(Modifier.weight(1f).padding(horizontal = Space.xs)) {
+                    Text(title, style = MaterialTheme.typography.titleLarge, color = onBar, maxLines = 1)
+                    if (subtitle != null) {
+                        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = onBar.copy(alpha = 0.75f), maxLines = 1)
+                    }
+                }
+                actions()
+            }
+        }
+        Spacer(Modifier.height(Space.sm))
+        return
+    }
     Column(modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.md)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) {
@@ -201,8 +263,14 @@ fun ScreenHeader(
 
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = null, onAction: () -> Unit = {}) {
+    val breeze = isBreeze()
     Row(modifier.fillMaxWidth().padding(top = Space.sm, bottom = Space.xxs), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Text(
+            text,
+            style = if (breeze) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+            color = if (breeze) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            modifier = Modifier.weight(1f).padding(horizontal = if (breeze) Space.xs else 0.dp),
+        )
         if (action != null) {
             Text(
                 action,
@@ -219,8 +287,11 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = 
 @Composable
 fun <T> PillChoice(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
+    val breeze = isBreeze()
+    val outer = if (breeze) RoundedCornerShape(10.dp) else CircleShape
+    val inner = if (breeze) RoundedCornerShape(8.dp) else CircleShape
     Row(
-        modifier.fillMaxWidth().clip(CircleShape).background(cs.surfaceContainerHigh).padding(Space.xxs),
+        modifier.fillMaxWidth().clip(outer).background(cs.surfaceContainerHigh).padding(Space.xxs),
         horizontalArrangement = Arrangement.spacedBy(Space.xxs),
     ) {
         options.forEach { (value, label) ->
@@ -228,7 +299,7 @@ fun <T> PillChoice(options: List<Pair<T, String>>, selected: T, onSelect: (T) ->
             val bg by animateColorAsState(if (on) cs.primary else Color.Transparent, label = "pill")
             val fg by animateColorAsState(if (on) cs.onPrimary else cs.onSurfaceVariant, label = "pillText")
             Box(
-                Modifier.weight(1f).clip(CircleShape).background(bg).clickable { onSelect(value) }
+                Modifier.weight(1f).clip(inner).background(bg).clickable { onSelect(value) }
                     .padding(vertical = Space.sm),
                 contentAlignment = Alignment.Center,
             ) {
@@ -246,6 +317,17 @@ fun StatTile(
     modifier: Modifier = Modifier,
     container: Color = MaterialTheme.colorScheme.primaryContainer,
 ) {
+    if (isBreeze()) {
+        Column(
+            modifier.clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(Space.md),
+            verticalArrangement = Arrangement.spacedBy(Space.xxs),
+        ) {
+            IconBadge(icon, size = 36.dp, container = container)
+            Text(value, style = MaterialTheme.typography.headlineMedium)
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
     val fg = contentColorFor(container)
     Column(
         modifier.clip(RoundedCornerShape(Radius.lg)).background(container).padding(Space.md),
@@ -323,6 +405,26 @@ data class NavItem(val label: String, val icon: ImageVector)
 @Composable
 fun PillBottomBar(items: List<NavItem>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
+    if (isBreeze()) {
+        // Flat full-width bar with every label visible.
+        Column(modifier.fillMaxWidth().background(cs.surfaceContainerLowest)) {
+            Box(Modifier.fillMaxWidth().height(Stroke.hairline).background(cs.outlineVariant))
+            Row(Modifier.fillMaxWidth().navigationBarsPadding().height(62.dp)) {
+                items.forEachIndexed { i, item ->
+                    val c by animateColorAsState(if (i == selected) cs.primary else cs.onSurfaceVariant, label = "navB")
+                    Column(
+                        Modifier.weight(1f).fillMaxHeight().clickable { onSelect(i) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(item.icon, null, tint = c, modifier = Modifier.size(24.dp))
+                        Text(item.label, style = MaterialTheme.typography.labelSmall, color = c, maxLines = 1)
+                    }
+                }
+            }
+        }
+        return
+    }
     Row(
         modifier
             .navigationBarsPadding()

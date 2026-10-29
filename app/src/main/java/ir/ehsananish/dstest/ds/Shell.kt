@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -86,10 +89,13 @@ data class AppInfo(
 @Composable
 fun SyncSystemBars(activity: ComponentActivity) {
     val dark = LocalIsDark.current
-    DisposableEffect(dark) {
+    // Breeze draws a colored bar under the status bar once past onboarding, so it needs light icons.
+    val lightStatusIcons = dark || (isBreeze() && LocalSettings.current.onboardingDone)
+    DisposableEffect(dark, lightStatusIcons) {
         val t = android.graphics.Color.TRANSPARENT
-        val style = if (dark) SystemBarStyle.dark(t) else SystemBarStyle.light(t, t)
-        activity.enableEdgeToEdge(style, style)
+        val status = if (lightStatusIcons) SystemBarStyle.dark(t) else SystemBarStyle.light(t, t)
+        val nav = if (dark) SystemBarStyle.dark(t) else SystemBarStyle.light(t, t)
+        activity.enableEdgeToEdge(status, nav)
         onDispose {}
     }
 }
@@ -120,6 +126,7 @@ fun AppShell(
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         PastelBackdrop(Modifier.fillMaxWidth().height(320.dp))
+        if (isBreeze()) Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(headerBarColor()))
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Box(Modifier.weight(1f)) {
                 AnimatedContent(
@@ -145,7 +152,9 @@ fun OnboardingScreen(info: AppInfo, onDone: () -> Unit) {
     val pages = info.onboarding
     val pager = rememberPagerState { pages.size }
     val scope = rememberCoroutineScope()
-    val containers = listOf(cs.primaryContainer, cs.tertiaryContainer, cs.secondaryContainer)
+    val breeze = isBreeze()
+    val containers = if (breeze) listOf(cs.primary, cs.secondary, cs.tertiary)
+    else listOf(cs.primaryContainer, cs.tertiaryContainer, cs.secondaryContainer)
     Box(Modifier.fillMaxSize().background(cs.background)) {
         PastelBackdrop(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize().systemBarsPadding().padding(Space.lg)) {
@@ -168,10 +177,11 @@ fun OnboardingScreen(info: AppInfo, onDone: () -> Unit) {
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Box(
-                        Modifier.size(200.dp).clip(RoundedCornerShape(Radius.xl * 2)).background(container),
+                        Modifier.size(if (breeze) 160.dp else 200.dp)
+                            .clip(if (breeze) CircleShape else RoundedCornerShape(Radius.xl * 2)).background(container),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(p.icon, null, tint = contentColorFor(container), modifier = Modifier.size(96.dp))
+                        Icon(p.icon, null, tint = contentColorFor(container), modifier = Modifier.size(if (breeze) 80.dp else 96.dp))
                     }
                     Spacer(Modifier.height(Space.xl))
                     Text(p.title, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
@@ -212,12 +222,20 @@ fun SettingsScreen(info: AppInfo, onContact: () -> Unit) {
         ScreenHeader("تنظیمات", subtitle = "ظاهر برنامه را به سلیقه‌ی خودت تغییر بده")
         Column(Modifier.padding(horizontal = Space.md), verticalArrangement = Arrangement.spacedBy(Space.md)) {
             PastelCard {
+                Text("سبک طراحی", style = MaterialTheme.typography.titleMedium)
+                PillChoice(DesignStyle.entries.map { it to it.nameFa }, s.style, s::updateStyle)
+                Text(
+                    if (s.style == DesignStyle.Breeze) "ساده، تخت و مرتب؛ مثل یک پیام‌رسان." else "نرم، گرد و رنگی؛ شاد و دوست‌داشتنی.",
+                    style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,
+                )
+            }
+            PastelCard {
                 Text("رنگ برنامه", style = MaterialTheme.typography.titleMedium)
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(Space.xs),
                 ) {
-                    Palettes.all.forEach { p ->
+                    Palettes.forStyle(s.style).forEach { p ->
                         val on = p.id == s.palette.id
                         Column(
                             Modifier.clip(RoundedCornerShape(Radius.md)).clickable { s.updatePalette(p) }.padding(Space.xxs),
