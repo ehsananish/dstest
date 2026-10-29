@@ -29,6 +29,8 @@ class AppSettings(context: Context, defaultStyle: DesignStyle = DesignStyle.Past
         private set
     var onboardingDone by mutableStateOf(prefs.getBoolean("onboarding_done", false))
         private set
+    var voiceGuide by mutableStateOf(prefs.getBoolean("voice_guide", true))
+        private set
 
     fun updateStyle(s: DesignStyle) {
         style = s
@@ -38,6 +40,7 @@ class AppSettings(context: Context, defaultStyle: DesignStyle = DesignStyle.Past
     fun updatePalette(p: Palette) { palette = p; prefs.edit().putString("palette", p.id).apply() }
     fun updateThemeMode(m: ThemeMode) { themeMode = m; prefs.edit().putString("theme_mode", m.name).apply() }
     fun updateFontScale(s: FontScale) { fontScale = s; prefs.edit().putString("font_scale", s.name).apply() }
+    fun updateVoiceGuide(on: Boolean) { voiceGuide = on; prefs.edit().putBoolean("voice_guide", on).apply() }
     fun updateOnboardingDone(done: Boolean) {
         onboardingDone = done
         prefs.edit().putBoolean("onboarding_done", done).apply()

@@ -45,6 +45,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Email
@@ -55,9 +57,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -76,6 +81,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 data class OnboardingPage(val icon: ImageVector, val title: String, val body: String)
+
+/** Lets an app screen switch AppShell's bottom tab, e.g. LocalSelectTab.current(0). */
+val LocalSelectTab = staticCompositionLocalOf<(Int) -> Unit> { {} }
 
 /** What the shared screens need to know about the app. */
 data class AppInfo(
@@ -137,7 +145,7 @@ fun AppShell(
                     when (t) {
                         -1 -> ContactScreen(info, onBack = { showContact = false })
                         settingsIndex -> SettingsScreen(info, onContact = { showContact = true })
-                        else -> content(t)
+                        else -> CompositionLocalProvider(LocalSelectTab provides { tab = it.coerceIn(0, settingsIndex) }) { content(t) }
                     }
                 }
             }
@@ -152,6 +160,9 @@ fun OnboardingScreen(info: AppInfo, onDone: () -> Unit) {
     val pages = info.onboarding
     val pager = rememberPagerState { pages.size }
     val scope = rememberCoroutineScope()
+    val settings = LocalSettings.current
+    val hasVoice = rememberHasVoiceGuide()
+    if (hasVoice) OnboardingVoice(pager.currentPage, settings.voiceGuide)
     val breeze = isBreeze()
     val containers = if (breeze) listOf(cs.primary, cs.secondary, cs.tertiary)
     else listOf(cs.primaryContainer, cs.tertiaryContainer, cs.secondaryContainer)
@@ -160,6 +171,13 @@ fun OnboardingScreen(info: AppInfo, onDone: () -> Unit) {
         Column(Modifier.fillMaxSize().systemBarsPadding().padding(Space.lg)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(info.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                if (hasVoice) {
+                    CircleIconButton(
+                        if (settings.voiceGuide) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
+                        onClick = { settings.updateVoiceGuide(!settings.voiceGuide) },
+                        contentDescription = if (settings.voiceGuide) "قطع صدای راهنما" else "پخش صدای راهنما",
+                    )
+                }
                 Text(
                     "رد شدن",
                     style = MaterialTheme.typography.labelLarge,
@@ -266,6 +284,15 @@ fun SettingsScreen(info: AppInfo, onContact: () -> Unit) {
             }
             PastelCard {
                 SettingsRow(Icons.Rounded.Forum, "ارتباط با ما", subtitle = "پیشنهاد، مشکل یا سؤال؟ برایمان بنویس", onClick = onContact)
+                if (rememberHasVoiceGuide()) {
+                    SettingsRow(
+                        Icons.AutoMirrored.Rounded.VolumeUp, "راهنمای صوتی",
+                        subtitle = "پخش توضیح صوتی در راهنمای شروع",
+                        container = cs.secondaryContainer,
+                        onClick = { s.updateVoiceGuide(!s.voiceGuide) },
+                        trailing = { Switch(checked = s.voiceGuide, onCheckedChange = { s.updateVoiceGuide(it) }) },
+                    )
+                }
                 SettingsRow(
                     Icons.Rounded.AutoAwesome, "دیدن دوباره‌ی راهنما",
                     container = cs.tertiaryContainer, onClick = { s.updateOnboardingDone(false) },
