@@ -52,8 +52,11 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -91,7 +94,15 @@ data class AppInfo(
     val onboarding: List<OnboardingPage>,
     val supportEmail: String = AppConfig.SUPPORT_EMAIL,
     val telegram: String = AppConfig.TELEGRAM,
+    /** Shown from Settings > Privacy. Override if the app ever handles data differently. */
+    val privacy: String = DEFAULT_PRIVACY,
 )
+
+const val DEFAULT_PRIVACY =
+    "این برنامه بدون ثبت‌نام کار می‌کند و هیچ اطلاعات شخصی‌ای از تو جمع‌آوری، ارسال یا با کسی به اشتراک گذاشته نمی‌شود. " +
+        "همهٔ داده‌هایی که در برنامه وارد می‌کنی فقط روی همین گوشی ذخیره می‌شوند و با حذف برنامه پاک می‌شوند. " +
+        "برنامه تبلیغ ندارد و برای کار کردن به اینترنت نیاز ندارد. " +
+        "اگر از بخش «ارتباط با ما» پیامی بفرستی، فقط همان پیام از راهی که خودت انتخاب می‌کنی (ایمیل یا تلگرام) به دست ما می‌رسد."
 
 /** Makes status/navigation bar icons readable in the app's (not the system's) light/dark mode. */
 @Composable
@@ -233,6 +244,16 @@ fun SettingsScreen(info: AppInfo, onContact: () -> Unit) {
     val s = LocalSettings.current
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
+    var showPrivacy by rememberSaveable { mutableStateOf(false) }
+    if (showPrivacy) {
+        AlertDialog(
+            onDismissRequest = { showPrivacy = false },
+            icon = { Icon(Icons.Rounded.Lock, null) },
+            title = { Text("حریم خصوصی") },
+            text = { Text(info.privacy, style = MaterialTheme.typography.bodyMedium) },
+            confirmButton = { TextButton(onClick = { showPrivacy = false }) { Text("متوجه شدم") } },
+        )
+    }
     val version = remember {
         runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: ""
     }
@@ -296,6 +317,10 @@ fun SettingsScreen(info: AppInfo, onContact: () -> Unit) {
                 SettingsRow(
                     Icons.Rounded.AutoAwesome, "دیدن دوباره‌ی راهنما",
                     container = cs.tertiaryContainer, onClick = { s.updateOnboardingDone(false) },
+                )
+                SettingsRow(
+                    Icons.Rounded.Lock, "حریم خصوصی", subtitle = "اطلاعاتت فقط روی گوشی خودت می‌ماند",
+                    container = cs.secondaryContainer, onClick = { showPrivacy = true },
                 )
                 SettingsRow(Icons.Rounded.Info, info.name, subtitle = "نسخه‌ی " + version.fa(), container = cs.primaryContainer)
             }

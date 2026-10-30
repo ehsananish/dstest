@@ -12,8 +12,8 @@ android {
         applicationId = "ir.ehsananish.dstest"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
     }
 
     signingConfigs {
@@ -50,4 +50,5 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.core:core-ktx:1.13.1")
+    testImplementation("junit:junit:4.13.2")
 }
