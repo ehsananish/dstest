@@ -127,20 +127,38 @@ private fun HomeScreen() {
                 Spacer(Modifier.height(Space.xs))
                 PillButton("ثبت فعالیت", onClick = {}, icon = Icons.Rounded.Bolt, style = BtnStyle.Tonal)
             }
+                        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                Box(Modifier.weight(1f).height(84.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.primaryContainer).blobBackground(cs.primary, seed = 5, alpha = 0.3f)) {
+                    Text("بلاب", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium)
+                }
+                Box(Modifier.weight(1f).height(84.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.tertiaryContainer).dotsBackground(cs.tertiary, alpha = 0.5f)) {
+                    Text("نقطه‌ها", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium)
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                Box(Modifier.weight(1f).height(84.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.surfaceContainerLowest)) {
+                    Box(Modifier.fillMaxWidth().height(56.dp).waveHeader(Brush.linearGradient(listOf(cs.secondary, cs.tertiary)))) {
+                        Text("موج", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium, color = Color.White)
+                    }
+                }
+                Box(Modifier.weight(1f).height(84.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.secondaryContainer).sparkleOverlay(cs.secondary, count = 7)) {
+                    Text("درخشش", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium)
+                }
+            }
             SectionTitle("آواتارهای گرادیانی")
             PastelCard {
                 Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), modifier = Modifier.fillMaxWidth()) {
                     listOf("علی", "مریم", "نان", "سبزی", "ورزش", "قرص", "کتاب", "سفر").forEachIndexed { i, n ->
-                        GradientAvatar(n, pair = i, size = 36.dp)
+                        GradientAvatar(n, pair = i, size = 34.dp)
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
-                    GradientAvatar("x", label = "🍎", size = 56.dp, pair = 1)
-                    GradientAvatar("y", icon = Icons.Rounded.Favorite, size = 56.dp, pair = 6)
-                    GradientAvatar("رضا", size = 56.dp)
-                    IconTile(Icons.Rounded.Notifications, pair = 3)
-                    IconTile(Icons.Rounded.Lock, colors = listOf(cs.primary))
-                    IconTile(Icons.Rounded.Star, size = 48.dp, circle = true, pair = 5)
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
+                    GradientAvatar("x", label = "🍎", size = 44.dp, pair = 1)
+                    GradientAvatar("y", icon = Icons.Rounded.Favorite, size = 44.dp, pair = 6)
+                    GradientAvatar("رضا", size = 44.dp)
+                    IconTile(Icons.Rounded.Notifications, size = 36.dp, pair = 3)
+                    IconTile(Icons.Rounded.Lock, size = 36.dp, colors = listOf(cs.primary))
+                    IconTile(Icons.Rounded.Star, size = 40.dp, circle = true, pair = 5)
                 }
             }
             SectionTitle("حلقه و نمودار")
@@ -159,25 +177,6 @@ private fun HomeScreen() {
                     valueText = { it.toInt().fa() },
                 )
             }
-            SectionTitle("اشکال تزیینی")
-            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                Box(Modifier.weight(1f).height(110.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.primaryContainer).blobBackground(cs.primary, seed = 5, alpha = 0.3f)) {
-                    Text("بلاب", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium)
-                }
-                Box(Modifier.weight(1f).height(110.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.tertiaryContainer).dotsBackground(cs.tertiary, alpha = 0.5f)) {
-                    Text("نقطه‌ها", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium)
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                Box(Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.surfaceContainerLowest)) {
-                    Box(Modifier.fillMaxWidth().height(80.dp).waveHeader(Brush.linearGradient(listOf(cs.secondary, cs.tertiary)))) {
-                        Text("موج", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium, color = Color.White)
-                    }
-                }
-                Box(Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(Radius.lg)).background(cs.secondaryContainer).sparkleOverlay(cs.secondary, count = 7)) {
-                    Text("درخشش", Modifier.padding(Space.md), style = MaterialTheme.typography.titleMedium)
-                }
-            }
             Spacer(Modifier.height(Space.lg))
         }
     }
@@ -193,6 +192,15 @@ private fun SocialScreen() {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader("گفتگو و تنظیمات", subtitle = "حباب، جستجو، گروه‌ها، شخصیت")
         Column(Modifier.padding(horizontal = Space.md), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
+            BlueSectionHeader("شخصیت و جشن")
+            PastelCard {
+                Box(Modifier.fillMaxWidth().height(170.dp), contentAlignment = Alignment.Center) {
+                    MascotFrame(mood, size = 150.dp) { m, blink -> Blobby(m, blink) }
+                    ConfettiBurst(burst, previewFrame = if (burst == 0) 0.45f else null)
+                }
+                PillSelectorRow(mood) { mood = it }
+                PillButton("جشن بگیر", onClick = { burst++; mood = MascotMood.Celebrating }, icon = Icons.Rounded.AutoAwesome)
+            }
             PillSearchBar(query, { query = it }, placeholder = "جستجوی یادداشت‌ها")
             SettingsGroup(title = "حساب") {
                 SettingsGroupRow(Icons.Rounded.Notifications, "یادآوری‌ها", subtitle = "هر روز ساعت ۸", pair = 0, trailing = {
@@ -206,15 +214,6 @@ private fun SocialScreen() {
             ChatBubble("سلام! امروز ۳ از ۵ هدف را انجام دادی. آفرین!", title = "مربی", time = "۱۴:۲۰")
             ChatBubble("یادآوری فردا ساعت ۸ باشد", mine = true, time = "۱۴:۲۱")
             ChatBubble("حتماً. فردا صبح خبرت می‌کنم.", time = "۱۴:۲۱")
-            BlueSectionHeader("شخصیت و جشن")
-            PastelCard {
-                Box(Modifier.fillMaxWidth().height(190.dp), contentAlignment = Alignment.Center) {
-                    MascotFrame(mood, size = 160.dp) { m, blink -> Blobby(m, blink) }
-                    ConfettiBurst(burst, previewFrame = if (burst == 0) 0.45f else null)
-                }
-                PillSelectorRow(mood) { mood = it }
-                PillButton("جشن بگیر", onClick = { burst++; mood = MascotMood.Celebrating }, icon = Icons.Rounded.AutoAwesome)
-            }
             Spacer(Modifier.height(Space.lg))
         }
     }

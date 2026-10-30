@@ -117,9 +117,9 @@ fun IconTile(
 fun heroColors(): List<Color> {
     val cs = MaterialTheme.colorScheme
     return if (LocalIsDark.current) {
-        listOf(cs.primaryContainer, lerp(cs.primaryContainer, cs.tertiaryContainer, 0.6f))
+        listOf(cs.primaryContainer, lerp(cs.primaryContainer, cs.tertiaryContainer, 0.35f))
     } else {
-        listOf(cs.primary, lerp(cs.primary, cs.tertiary, 0.6f))
+        listOf(cs.primary, lerp(lerp(cs.primary, cs.tertiary, 0.3f), Color.Black, 0.22f))
     }
 }
 

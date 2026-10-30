@@ -265,7 +265,7 @@ fun brandGradientColors(): List<Color> {
     val cs = MaterialTheme.colorScheme
     val dark = LocalIsDark.current
     val a = if (dark) cs.primaryContainer else cs.primary
-    val b = androidx.compose.ui.graphics.lerp(a, if (dark) cs.tertiaryContainer else cs.tertiary, 0.55f)
+    val b = androidx.compose.ui.graphics.lerp(a, if (dark) cs.tertiaryContainer else cs.tertiary, 0.3f)
     return listOf(a, b)
 }
 
