@@ -16,11 +16,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -83,7 +86,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-data class OnboardingPage(val icon: ImageVector, val title: String, val body: String)
+data class OnboardingPage(
+    val icon: ImageVector,
+    val title: String,
+    val body: String,
+    /** Optional app artwork (e.g. the mascot) drawn in the big tile instead of [icon]. */
+    val art: (@Composable BoxScope.() -> Unit)? = null,
+)
 
 /** Lets an app screen switch AppShell's bottom tab, e.g. LocalSelectTab.current(0). */
 val LocalSelectTab = staticCompositionLocalOf<(Int) -> Unit> { {} }
@@ -210,7 +219,8 @@ fun OnboardingScreen(info: AppInfo, onDone: () -> Unit) {
                             .clip(if (breeze) CircleShape else RoundedCornerShape(Radius.xl * 2)).background(container),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(p.icon, null, tint = contentColorFor(container), modifier = Modifier.size(if (breeze) 80.dp else 96.dp))
+                        if (p.art != null) p.art.invoke(this)
+                        else Icon(p.icon, null, tint = contentColorFor(container), modifier = Modifier.size(if (breeze) 80.dp else 96.dp))
                     }
                     Spacer(Modifier.height(Space.xl))
                     Text(p.title, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
@@ -363,6 +373,11 @@ fun ContactScreen(info: AppInfo, onBack: () -> Unit) {
             }
             if (info.telegram.isNotBlank()) {
                 PastelCard {
+                    Text(
+                        "ایده، انتقاد یا پیشنهاد داری؟ در تلگرام برایمان بنویس؛ هر بهبودی که بخواهی را می‌خوانیم و روی بهتر شدن برنامه کار می‌کنیم.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = cs.onSurfaceVariant,
+                    )
                     SettingsRow(
                         Icons.Rounded.Forum, "گفت‌وگو در تلگرام", subtitle = "@" + info.telegram,
                         onClick = { openUrl(ctx, "https://t.me/" + info.telegram) },
@@ -380,7 +395,47 @@ fun ContactScreen(info: AppInfo, onBack: () -> Unit) {
             if (info.supportEmail.isBlank() && info.telegram.isBlank()) {
                 EmptyState(Icons.Rounded.Forum, "به‌زودی", "راه‌های ارتباطی به‌زودی اضافه می‌شوند.")
             }
+            MoreAppsSection(ctx)
         }
+    }
+}
+
+@Composable
+private fun MoreAppsSection(ctx: Context) {
+    val apps = MoreApps.list
+    if (apps.isEmpty()) return
+    val cs = MaterialTheme.colorScheme
+    SectionTitle("اپ‌های دیگر ما")
+    PastelCard {
+        apps.forEach { app ->
+            val res = ctx.resources.getIdentifier(app.iconName, "drawable", ctx.packageName)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                    .clickable { openApp(ctx, app.pkg) }
+                    .padding(vertical = Space.xs),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Space.md),
+            ) {
+                if (res != 0) {
+                    Image(
+                        painterResource(res), contentDescription = null,
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)),
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(app.name, style = MaterialTheme.typography.titleSmall)
+                    Text(app.blurb, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, maxLines = 2)
+                }
+            }
+        }
+    }
+}
+
+private fun openApp(ctx: Context, pkg: String) {
+    try {
+        ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("bazaar://details?id=$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (e: Exception) {
+        openUrl(ctx, "https://cafebazaar.ir/app/$pkg")
     }
 }
 
