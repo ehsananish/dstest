@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="log_today"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_log"
+        android:shortcutLongLabel="@string/shortcut_log_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ir.ehsananish.dstest"
+            android:targetClass="ir.ehsananish.dstest.MainActivity">
+            <extra android:name="open_entry" android:value="true" />
+        </intent>
+    </shortcut>
+</shortcuts>

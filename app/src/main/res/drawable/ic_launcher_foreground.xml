@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Replace with an icon for the app. Keep content inside the central 66dp safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#6750C8" android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M54,42l3.5,8.5 8.5,3.5 -8.5,3.5 -3.5,8.5 -3.5,-8.5 -8.5,-3.5 8.5,-3.5z" />
+    <path android:fillColor="#33000000" android:pathData="M40,64m-11,0a11,11 0,1 1,22 0a11,11 0,1 1,-22 0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M40,62m-11,0a11,11 0,1 1,22 0a11,11 0,1 1,-22 0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M54,51m-15,0a15,15 0,1 1,30 0a15,15 0,1 1,-30 0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M68,60m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M38,56h32a8.5,8.5 0,0 1,0 17h-32a8.5,8.5 0,0 1,0 -17z" />
+    <path android:fillColor="#3B3560" android:pathData="M47,62m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0z" />
+    <path android:fillColor="#3B3560" android:pathData="M61,62m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0z" />
+    <path android:fillColor="#FF9EB5" android:pathData="M42.5,67m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0z" />
+    <path android:fillColor="#FF9EB5" android:pathData="M65.5,67m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0z" />
+    <path android:strokeColor="#3B3560" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M50,67q4,4.5 8,0" />
+    <path android:fillColor="#FFD54F" android:pathData="M77,31l2,5l5,2l-5,2l-2,5l-2,-5l-5,-2l5,-2z" />
 </vector>

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">پاستیل</string>
+    <string name="app_name">حال‌نامه</string>
+    <string name="shortcut_log">ثبت حال امروز</string>
+    <string name="shortcut_log_long">ثبت حال امروز در حال‌نامه</string>
 </resources>
