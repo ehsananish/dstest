@@ -228,7 +228,7 @@ fun InsightsScreen(store: Store) {
                         Text("${Logic.fmt1(avg)} از ۵", style = MaterialTheme.typography.displaySmall)
                         Text(Logic.weekSentence(list, today), style = MaterialTheme.typography.bodyMedium)
                     }
-                    RingMeter((avg / 5).toFloat(), size = 92.dp, strokeWidth = 11.dp, colors = listOf(androidx.compose.ui.graphics.Color.White, androidx.compose.ui.graphics.Color(0xFFFFE9A8))) {
+                    RingMeter((avg / 5).toFloat(), size = 92.dp, strokeWidth = 11.dp, track = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.22f), colors = listOf(androidx.compose.ui.graphics.Color.White, androidx.compose.ui.graphics.Color(0xFFFFE9A8))) {
                         MoodFace(Math.round(avg).toInt().coerceIn(1, 5), size = 44.dp)
                     }
                 }
