@@ -56,6 +56,7 @@ import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -182,7 +183,10 @@ fun OnboardingScreen(info: AppInfo, onDone: () -> Unit) {
     val scope = rememberCoroutineScope()
     val settings = LocalSettings.current
     val hasVoice = rememberHasVoiceGuide()
-    if (hasVoice) OnboardingVoice(pager.currentPage, settings.voiceGuide)
+    // The user explicitly asked for audio in this session (speaker or replay): play even on silent mode.
+    var voiceAsked by rememberSaveable { mutableStateOf(false) }
+    var voiceReplay by rememberSaveable { mutableIntStateOf(0) }
+    if (hasVoice) OnboardingVoice(pager.settledPage, settings.voiceGuide, voiceAsked, voiceReplay)
     val breeze = isBreeze()
     val containers = if (breeze) listOf(cs.primary, cs.secondary, cs.tertiary)
     else listOf(cs.primaryContainer, cs.tertiaryContainer, cs.secondaryContainer)
@@ -192,9 +196,20 @@ fun OnboardingScreen(info: AppInfo, onDone: () -> Unit) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(info.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 if (hasVoice) {
+                    if (settings.voiceGuide) {
+                        CircleIconButton(
+                            Icons.Rounded.Replay,
+                            onClick = { voiceAsked = true; voiceReplay++ },
+                            contentDescription = "پخش دوباره‌ی توضیح این صفحه",
+                        )
+                        Spacer(Modifier.width(Space.xs))
+                    }
                     CircleIconButton(
                         if (settings.voiceGuide) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
-                        onClick = { settings.updateVoiceGuide(!settings.voiceGuide) },
+                        onClick = {
+                            if (!settings.voiceGuide) voiceAsked = true
+                            settings.updateVoiceGuide(!settings.voiceGuide)
+                        },
                         contentDescription = if (settings.voiceGuide) "قطع صدای راهنما" else "پخش صدای راهنما",
                     )
                 }
@@ -318,7 +333,7 @@ fun SettingsScreen(info: AppInfo, onContact: () -> Unit) {
                 if (rememberHasVoiceGuide()) {
                     SettingsRow(
                         Icons.AutoMirrored.Rounded.VolumeUp, "راهنمای صوتی",
-                        subtitle = "پخش توضیح صوتی در راهنمای شروع",
+                        subtitle = "پخش توضیح صوتی در راهنمای شروع (در حالت بی‌صدا خودکار پخش نمی‌شود)",
                         container = cs.secondaryContainer,
                         onClick = { s.updateVoiceGuide(!s.voiceGuide) },
                         trailing = { Switch(checked = s.voiceGuide, onCheckedChange = { s.updateVoiceGuide(it) }) },
